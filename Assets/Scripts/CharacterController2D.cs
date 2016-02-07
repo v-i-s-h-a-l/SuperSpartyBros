@@ -43,10 +43,9 @@ public class CharacterController2D : MonoBehaviour {
 	float _vy;
 
 	// player tracking
-	bool _facingRight = true;
-	bool _isGrounded = false;
-	bool _isRunning = false;
-	bool _canDoubleJump = false;
+	bool facingRight = true;
+	bool isGrounded = false;
+	bool isRunning = false;
 
 	// store the layer the player is on (setup in Awake)
 	int _playerLayer;
@@ -93,13 +92,13 @@ public class CharacterController2D : MonoBehaviour {
 		// Determine if running based on the horizontal movement
 		if (_vx != 0) 
 		{
-			_isRunning = true;
+			isRunning = true;
 		} else {
-			_isRunning = false;
+			isRunning = false;
 		}
 
 		// set the running animation state
-		_animator.SetBool("Running", _isRunning);
+		_animator.SetBool("Running", isRunning);
 
 		// get the current vertical velocity from the rigidbody component
 		_vy = _rigidbody.velocity.y;
@@ -107,23 +106,19 @@ public class CharacterController2D : MonoBehaviour {
 		// Check to see if character is grounded by raycasting from the middle of the player
 		// down to the groundCheck position and see if collected with gameobjects on the
 		// whatIsGround layer
-		_isGrounded = Physics2D.Linecast(_transform.position, groundCheck.position, whatIsGround);
-
-		// allow double jump after grounded
-		if (_isGrounded) {
-			_canDoubleJump = true;
-		}
+		isGrounded = Physics2D.Linecast(_transform.position, groundCheck.position, whatIsGround);  
 
 		// Set the grounded animation states
-		_animator.SetBool("Grounded", _isGrounded);
+		_animator.SetBool("Grounded", isGrounded);
 
-		if(_isGrounded && Input.GetButtonDown("Jump")) // If grounded AND jump button pressed, then allow the player to jump
+		if(isGrounded && Input.GetButtonDown("Jump")) // If grounded AND jump button pressed, then allow the player to jump
 		{
-			DoJump();
-		} else if (_canDoubleJump && Input.GetButtonDown ("Jump")) { // If canDoubleJump AND jump button pressed, then allow to double jump
-			DoJump();
-			// disable double jump, since, you can only really do it once
-			_canDoubleJump = false;
+			// reset current vertical motion to 0 prior to jump
+			_vy = 0f;
+			// add a force in the up direction
+			_rigidbody.AddForce (new Vector2 (0, jumpForce));
+			// play the jump sound
+			PlaySound(jumpSFX);
 		}
 	
 		// If the player stops jumping mid jump and player is not yet falling
@@ -152,14 +147,14 @@ public class CharacterController2D : MonoBehaviour {
 
 		if (_vx > 0) // moving right so face right
 		{
-			_facingRight = true;
+			facingRight = true;
 		} else if (_vx < 0) { // moving left so face left
-			_facingRight = false;
+			facingRight = false;
 		}
 
 		// check to see if scale x is right for the player
 		// if not, multiple by -1 which is an easy way to flip a sprite
-		if (((_facingRight) && (localScale.x<0)) || ((!_facingRight) && (localScale.x>0))) {
+		if (((facingRight) && (localScale.x<0)) || ((!facingRight) && (localScale.x>0))) {
 			localScale.x *= -1;
 		}
 
@@ -184,16 +179,6 @@ public class CharacterController2D : MonoBehaviour {
 		{
 			this.transform.parent = null;
 		}
-	}
-
-	// make the player jump
-	void DoJump() {
-		// reset current vertical motion to 0 prior to jump
-		_vy = 0f;
-		// add a force in the up direction
-		_rigidbody.AddForce (new Vector2 (0, jumpForce));
-		// play the jump sound
-		PlaySound(jumpSFX);
 	}
 
 	// do what needs to be done to freeze the player
